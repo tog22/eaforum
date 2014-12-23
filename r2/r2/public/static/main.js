@@ -1,7 +1,7 @@
 (function ($) {
 
 $(document).ready(function() {
-  /* reposition elements for CFEA reskin */
+  /* reposition elements for EA Forum reskin */
 
   var userInfo = $('<div id="user-info">');
   // username
@@ -116,5 +116,5 @@ $(document).ready(function() {
     });
   }
 });
-
+$("#side-meetups").prepend("<span>HI!!!!</span>");
 })(jQuery);
