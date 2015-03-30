@@ -538,9 +538,8 @@ class FrontController(RedditController):
         captcha = Captcha(tabular=False) if c.user.needs_captcha() else None
         srs = Subreddit.submit_sr(c.user)
 
-        # Set the default sr to the user's draft when creating a new article
         try:
-            sr = Subreddit._by_name(c.user.draft_sr_name)
+            sr = Subreddit._by_name(g.default_sr)
         except NotFound:
             sr = None
 
@@ -569,6 +568,7 @@ class FrontController(RedditController):
         captcha = Captcha(tabular=False) if c.user.needs_captcha() else None
 
         return FormPage(_("Edit article"),
+                      show_sidebar = True,
                       content=EditLink(article, subreddits=subreddits, tags=article.tag_names(), captcha=captcha)).render()
 
     def _render_opt_in_out(self, msg_hash, leave):

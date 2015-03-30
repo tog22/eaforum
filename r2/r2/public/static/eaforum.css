@@ -65,7 +65,7 @@ div.permamessage {
     left: 0px;
     height: 100%;
     width: 100%;
-    background-color: gray;
+    background-color: black;
     opacity: .7;
     filter:alpha(opacity=70); /* IE patch */
     z-index: 1000;
@@ -184,9 +184,9 @@ div.inline-listing a:hover {
     margin-left: 1em;
 }
 div.comment .focal {
-	background-color: #ffc;
-        padding-left: 5px;
-        padding-right: 5px;
+	background-color: aliceblue;
+  padding-left: 5px;
+  padding-right: 5px;
 }
 
 
@@ -259,6 +259,10 @@ h1 a, h2 a {
 .pretty-form.long-text input[type=text],
 .pretty-form.long-text textarea,
 .pretty-form.long-text input[type=password] {margin: 3px; width: 40em }
+
+.pretty-form.meetup .btn {
+  margin-top: 12px;
+}
 
 /* Image browser */
 #images {
@@ -396,7 +400,7 @@ div#side-wikilinks {
 }
 
 .error {
-    color: red;
+    color: #326492;
     margin: 5px 0;
 }
 
@@ -404,6 +408,7 @@ div#side-wikilinks {
 
 div.comment div.parent {
 	padding-left: 5px;
+  margin-top: 12px;
 }
 
 /* Login form in sidebar */

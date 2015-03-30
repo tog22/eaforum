@@ -182,7 +182,7 @@ class Subreddit(Thing, Printable, ImageHolder):
     def can_submit(self, user):
         if c.user_is_admin:
             return True
-        elif self.type == 'private' and self.is_contributor(user):
+        elif (self.type == 'private' or self.type == 'restricted') and self.is_contributor(user):
             #restricted/private require contributorship
             return True
         elif not c.user.email_validated:
@@ -506,10 +506,19 @@ class DefaultSR(FakeSubreddit):
             if time != 'all':
                 q._filter(queries.db_times[time])
             return q
+            return q
 
     def get_links(self, sort, time, link_cls = None):
         user = c.user if c.user_is_loggedin else None
         sr_ids = Subreddit.user_subreddits(user)
+
+        try:
+            draft_sr = Subreddit._by_name(user.draft_sr_name) if user else None
+        except NotFound:
+            draft_sr = None
+
+        if draft_sr != None and draft_sr._id in sr_ids:
+            sr_ids.remove(draft_sr._id)
         return self.get_links_sr_ids(sr_ids, sort, time, link_cls)
 
     @property

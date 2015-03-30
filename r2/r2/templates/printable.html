@@ -111,18 +111,20 @@ ${self.RenderPrintable()}
       _("Reported"), clicked=thing.report_made)}
     </li>
   %endif
-  %if (not thing.author or thing.author.name == c.user.name) and delete:
+  <% thing_is_moderatable = hasattr(thing,"subreddit_slow") %>
+  <% can_moderate = c.user_is_loggedin and ((thing_is_moderatable and thing.subreddit_slow.is_moderator(c.user)) or c.user_is_admin) %>
+  %if (not thing.author or thing.author.name == c.user.name or can_moderate) and delete:
     <li class='delete'>
       ${yes_no_button("delete", fullname, _("Delete"), \
       "return deletetoggle(this, $ListClass.del);",\
       _("Deleted"))}
     </li>
   %endif
-  %if (not thing.author or thing.author.name == c.user.name) and retract:
+  %if (not thing.author or thing.author.name == c.user.name or can_moderate) and retract:
     <li class='retract'>
       ${yes_no_button("retract", fullname, _("Retract"), \
       "return deletetoggle(this, $ListClass.retract);",\
-      _("Retracted"), clicked=thing.retracted, tool_tip=_("Retract"))}
+      _("Retracted"), clicked=thing.retracted)}
     </li>
   %endif
 %endif
@@ -181,6 +183,7 @@ ${self.RenderPrintable()}
 <%
    _type = "up" if dir > 0 else "down"
    _class = _type + (" mod" if mod else "")
+   _caption = "I found this useful" if dir > 0 else "I didn't find this useful"
    fullname = this._fullname
 %>
   <a id="${_type}_${fullname}" class="${_class}"
@@ -189,7 +192,7 @@ ${self.RenderPrintable()}
   %else:
     onclick="showcover(true, 'vote_${fullname}')"
   %endif
-  title="${_('Vote')} ${_(_type)}">${_('Vote')} ${_(_type)}</a>
+  title="${_(_caption)}">${_(_caption)}</a>
 </%def>
 
 <%def name="score(this, likes=None, inline=True, label = True, _id = True)">
@@ -236,7 +239,7 @@ ${self.RenderPrintable()}
   %>
   <%def name="_link()" buffered="True">
     <a href="/" class="${a_class}" onclick="${onclick}"
-       ${ "title='%s'"%(_(tool_tip)) if tool_tip else "" }
+       ${ "title='%s'"%(_(title)) if title else "" }
        id="a_${tag.replace('/','_')}">${title}</a>
   </%def>
   <%

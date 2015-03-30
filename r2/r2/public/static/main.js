@@ -4,18 +4,24 @@ $(document).ready(function() {
   /* reposition elements for EA Forum reskin */
 
   var userInfo = $('<div id="user-info">');
-  // username
-  $("#side-status h2").appendTo(userInfo);
-  // karma
-  $("#side-status div.userinfo span.score").appendTo(userInfo);
-  $("#side-status div.userinfo span.monthly-score").appendTo(userInfo);
-  // logout
-  $("#side-status ul.userlinks a[href$='/logout/']").attr("id", "signout");
-  $("#side-status ul.userlinks a[href$='/logout/']").text("sign out");
-  $("#side-status ul.userlinks a[href$='/logout/']").appendTo(userInfo);
+  var pathname = window.location.pathname;
+  // This if statement prevents the viewed user being displayed as the logged in
+  // user when viewing a user's profile without being logged on
+  if ($("#side-status h2").length > 1 || !/^\/user\/([^\/]*)\/(.*)/.exec(pathname)) {
+    // username - using last child so when viewing another user their details
+    // stay in right box
+    $("#side-status h2").last().appendTo(userInfo);
+    // karma
+    $("#side-status div.userinfo span.score").last().appendTo(userInfo);
+    $("#side-status div.userinfo span.monthly-score").last().appendTo(userInfo);
+    // logout
+    $("#side-status ul.userlinks a[href$='/logout/']").attr("id", "signout");
+    $("#side-status ul.userlinks a[href$='/logout/']").text("sign out");
+    $("#side-status ul.userlinks a[href$='/logout/']").appendTo(userInfo);
 
+  }
   // search
-  $("#side-search").appendTo("#header");
+  $("#sidebar #side-search").appendTo("#header");
   // Add user info to header
   $("#header").append(userInfo);
 
@@ -31,6 +37,23 @@ $(document).ready(function() {
   $navBar.prependTo("#main");
   $(navDivId).prependTo("#navbar");
 
+  // if user is checking their messages, add the return to forum button
+  if (/^\/message\/.*/.test(pathname) || /^\/user\//.test(pathname)) {
+    $("#navbar").append("<a href=\"/\" id=\"back_to_forum\">Back To Forum</a>");
+    var right = "410px";
+    if (/^\/user\//.test(pathname)) {
+      right = "280px";
+    }
+    $("#back_to_forum").attr("style", "right: " + right +";");
+  }
+
+  // if user is adding a new article and does not have enough karma
+  var mainForumOption = $("select#sr option[value=main]")[0];
+  if (/^.*\/submit\//.test(pathname) && mainForumOption.disabled) {
+    var karma = / at least ([0-9]+) /.exec(mainForumOption.text)[1];
+    $("<div class='infobar' style='width: inherit;'>You do not yet have enough karma to post an article. Every 'like' that your comments gain will increase your karma by one point. Once you have earned " + karma + " karma, you will be able to post articles here. In the meantime, here are some <a href=\"/ea/7b/welcome_to_the_effective_altruism_forum/\">other ways</a> to participate.</div><p>&nbsp;</p>").insertAfter("form h1");
+  }
+
   // new article
   $("#side-status ul.userlinks a[href$='/submit/']").text("New Article");
   $("#side-status ul.userlinks a[href$='/submit/']").attr("id", "newarticle");
@@ -38,10 +61,43 @@ $(document).ready(function() {
   // messages
   $("#side-status div.userinfo span.mail a").text("Messages");
   $("#side-status div.userinfo span.mail").attr("id", "messages");
+  // $("#side-status div.userinfo span.mail").addClass("empty");
   $("#side-status div.userinfo span.mail").appendTo("#navbar");
   // preferences
   $("#side-status ul.userlinks a[href$='/prefs/']").attr("id", "preferences");
   $("#side-status ul.userlinks a[href$='/prefs/']").appendTo("#navbar");
+
+  // Add posts header on Overview page
+  if (/^\/user\//.test(pathname)) {
+    // Remove Hidden
+    $('a').filter(function(index) { return $(this).text() === "Hidden"; }).hide();
+    var bits = /^\/user\/([^\/]*)\/(.*)/.exec(pathname);
+    var userName = bits[1];
+    var rest = bits[2];
+    var thingName = "Contributions";
+    if (rest.indexOf("comments") == 0) {
+      thingName = "Comments";
+    } else if (rest.indexOf("submitted") == 0) {
+      thingName = "Articles";
+    } else if (rest.indexOf("liked") == 0) {
+      thingName = "Likes";
+    } else if (rest.indexOf("disliked") == 0) {
+      thingName = "Dislikes";
+    } else if (rest.indexOf("hidden") == 0) {
+      thingName = "Hidden Articles";
+    } else if (rest.indexOf("drafts") == 0) {
+      thingName = "Drafts";
+    }
+    $posts = $("<h2>" + userName + "'s " + thingName + "</h2>");
+    $posts.prependTo("#content");
+
+    // Bigger space between comments and posts
+    if (thingName == "Contributions") {
+      $("div#content > div.sitetable > div.comment, div#content > div.sitetable > div.post.list").each(function() {
+        $(this).attr("style", "margin-top: 24px");
+      });
+    }
+  }
 
   /* Dropdowns in main menu */
   dropdownSel = 'ul#nav li img.dropdown';
@@ -67,11 +123,11 @@ $(document).ready(function() {
   /* Add README link to the last paragraph */
   $('span.read_more_link').each(function() {
      var paragraph = $(this).parents("[itemprop='description']").find("p").filter(function() {
-        return jQuery(this).text().length > 0
+        return jQuery(this).text().length > 0;
      }).last();
      paragraph.append($(this).html());
      $(this).remove();
-  })
+  });
 
   // Post filter control
   $('#post-filter div.filter-active').click(function() {
@@ -87,11 +143,15 @@ $(document).ready(function() {
     return false;
   });
 
+  $("#banner").click(function() {
+    window.location.href = "/";
+  });
+
   function isiPhone() {
     return ((navigator.platform.indexOf("iPhone") != -1) ||
             (navigator.platform.indexOf("iPod") != -1) ||
             (navigator.platform.indexOf("iPad") != -1));
-  };
+  }
 
   /* Don't do qtip tooltips with iphones (and related), it seems to interfer with the
      normal onclick behaviour */
@@ -99,7 +159,8 @@ $(document).ready(function() {
     // Button tooltips
     $('div.tools div.vote a, div.tools div.boxright a.edit, div.tools div.boxright a, \
        div.comment-links ul li a, \
-       .userinfo .score, .userinfo .monthly-score, .votes').qtip({
+       .userinfo .score, .userinfo .monthly-score, \
+       #user-info .score, #user-info .monthly-score, .votes').qtip({
       position: {
         my: 'bottom center',
         at: 'top center'

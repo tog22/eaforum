@@ -29,7 +29,7 @@ body {
   font-family: Arial, sans-serif;
   font-size: 16px;
   text-align: center;
-  color: #565656;
+  color: #222222;
   background: #eaeaea;
   line-height: 1.4;
 }
@@ -182,6 +182,7 @@ button {
 #banner {
   height: 285px;
   background: #28577b url(/static/banner-image.jpg) no-repeat;
+  cursor: pointer;
 }
 a#logo {
   display: block;
@@ -232,7 +233,7 @@ a#miri:hover, a#fhi:hover, a#cfar:hover {
 #user-info h2, #user-info a, #user-info span {
   display: block;
   float: left;
-  margin-right: 20px;
+  margin-right: 10px;
 }
 
 #user-info h2 {
@@ -326,6 +327,7 @@ ul#nav {
 
   height: 42px;
   border-bottom: 1px solid #b2b2b2;
+  padding: 0 20px;
 }
 
 #nav img.dropdown {
@@ -472,6 +474,25 @@ ul#filternav li:last-child {
 #navbar {
   position: relative;
 }
+
+/* back to forum link */
+#back_to_forum {
+  position: absolute;
+  top: 10px;
+
+  float: left;
+  margin: 0 0 0 24px;
+  padding-left: 24px;
+  list-style: none;
+  font-family: 'montserratt', Arial, sans-serif;
+  font-size: 14px;
+  -webkit-text-stroke: 0.3px;
+  color: #326492;
+  text-decoration: none;
+  line-height: 21px;
+  background: url(/static/option-back-forum-ico.png) no-repeat left center;
+}
+
 /* new article link */
 #newarticle {
   position: absolute;
@@ -494,7 +515,6 @@ ul#filternav li:last-child {
 /* messages link */
 #messages {
   position: absolute;
-  top: 10px;
   right: 130px;
   -webkit-text-stroke-color: rgb(86, 86, 86);
   -webkit-text-stroke-width: 0.30000001192092896px;
@@ -503,14 +523,26 @@ ul#filternav li:last-child {
   font-family: 'montserratt', Arial, sans-serif;
   font-size: 14px;
   margin: 0 0 0 30px;
-  line-height: 21px;
   list-style-image: none;
   list-style-position: outside;
   list-style-type: none;
   padding-left: 30px;
-  background: url(/static/option-messages-ico.png) no-repeat left center;
   text-align: left;
   width: 100px;
+}
+
+#messages.empty {
+  background: url(/static/option-messages-ico.png) no-repeat left center;
+  top: 10px;
+  line-height: 21px;
+}
+
+#messages.unread {
+ background-image: url(/static/new_mail.png);
+ background-repeat: no-repeat;
+ background-position: left -1px;
+ top: 6px;
+ line-height: 28px;
 }
 
 #messages a {
@@ -548,13 +580,22 @@ div.post {
   margin: 5px 0;
   margin-bottom: 1.5em !important;
 }
+
+div.post h3 {
+  font-size: 14px;
+}
+
 div.post h2 {
-  padding-left: 20px;
+  font-size: 16px;
+}
+
+div.post h1, div.post h2, div.post h3 {
+  /*padding-left: 20px;*/
   color: rgb(50, 100, 146);
   cursor: auto;
-  display: inline;
+  display: block;
+  margin: 10px 0 !important;
   font-family: montserratt, Arial, sans-serif;
-  font-size: 16px;
   font-weight: bold;
   height: auto;
   line-height: 22.399999618530273px;
@@ -576,7 +617,6 @@ div.post div.postedby {
   font-family: Arial, sans-serif;
   font-size: 12px;
   font-style: italic;
-  font-weight: bold;
   line-height: 16.799999237060547px;
   list-style-image: none;
   list-style-position: outside;
@@ -623,14 +663,14 @@ div.meta span.votes span.votes {
   border-radius: 200px;
   text-align: center;
 }
-div.editors-pick div.meta span.votes span.votes {
+/*div.editors-pick div.meta span.votes span.votes {
   color: #fff;
   background-color: #326492;
   border: none;
   height: 22px;
   line-height: 22px;
   padding: 0 9px;
-}
+}*/
 div.meta span.editors-pick {
   color: #326492;
   font-weight: bold;
@@ -708,7 +748,8 @@ div.tools a.save, div.tools a.edit, div.tools a.hide, div.tools a.subscription {
   width: 16px;
 }
 div.tools a.save:hover, div.tools a.save.mod,
-div.tools a.subscription:hover, div.tools a.subscription.mod,
+/* div.tools a.subscription:hover, */
+div.tools a.subscription.mod,
 div.tools a.edit:hover,
 div.tools a.hide:hover, div.tools a.hide.mod,
 div.tools a.sub:hover, div.tools a.sub.mod,
@@ -778,6 +819,24 @@ div.tools a.license:hover {
   background-position: 0 -16px;
 }
 
+a.read_more_link {
+  color: rgb(50, 100, 146);
+  cursor: auto;
+  display: inline;
+  font-family: montserratt, Arial, sans-serif;
+  font-size: 12px;
+  font-style: italic;
+  font-weight: bold;
+  height: auto;
+  line-height: 16.799999237060547px;
+  list-style-image: none;
+  list-style-position: outside;
+  list-style-type: none;
+  text-align: left;
+  text-decoration: none;
+  width: auto;
+}
+
 /* Meetup
 -------------------------------------------------------------------------------------- */
 body.meetup-index div.post,
@@ -813,6 +872,11 @@ div.meetup-content {
   width: 445px;
   text-align: left;
 }
+div.meetup-content div.postedby {
+  margin-left: 0;
+  padding-left: 0;
+}
+
 div.meetup-meta {
   margin: 0 0 20px;
 }
@@ -889,7 +953,7 @@ form#comment-listing label {
   padding-right: 5px;
 }
 div.comment, div.message {
-  background-color: #f9fcfe;
+  background-color: #ECF5FF;
   border: 1px solid #b3b3b3;
   clear: both;
   margin: 0 0 12px;
@@ -897,7 +961,7 @@ div.comment, div.message {
 }
 div.comment {
   margin: 10px 0px 0px 0px;
-  padding: 2px 0 0px 15px;
+  padding: 2px 0 10px 15px;
 }
 div.comment div.entry {
   padding-right: 15px;
@@ -915,8 +979,7 @@ div.message div.message div.message div.message div.message div.message,
 div.message div.message div.message div.message div.message div.message div.message div.message {
   background-color: #fff;
   background-color: #fff;
-  margin: 0px;
-  border-bottom: 0px;
+  /*margin: 0px;*/
   padding-bottom: 10px;
 }
 div.comment div.comment div.comment,
@@ -927,11 +990,11 @@ div.message div.message div.message,
 div.message div.message div.message div.message div.message,
 div.message div.message div.message div.message div.message div.message div.message,
 div.message div.message div.message div.message div.message div.message div.message div.message div.message {
-  background-color: #F9FCFE;
+  background-color: #ECF5FF;
 }
 .new-comment,
 div.comment div.new-comment {
-  border: 5px solid #eed1ee !important;
+  border: 5px solid #2F95FE !important;
   padding: 0 0 0 10px !important;
   margin-right: 0 !important;
 }
@@ -940,7 +1003,7 @@ div.retracted {
 }
 div.comment-meta {
   color: #7f7f83;
-  padding: 10px 0;
+  padding: 0 0;
 }
 div.comment-meta span {
   float: left;
@@ -979,11 +1042,11 @@ div.message .head {
   margin-bottom: 16px;
 }
 
-div.message .head.new:before {
-  content: "⭑";
-  color: orangered;
-  font-style: normal;
+div.message .head.new {
+  font-weight: bold;
+  color: #2F95FE;
 }
+
 div.message .subject {
   color: rgb(86, 86, 86);
   font-weight: bold;
@@ -996,8 +1059,13 @@ div.message-content {
 }
 div.comment-content {
   clear: both;
-  padding: 9px 0 0;
+  padding: 0 0;
 }
+
+div.message-links {
+  font-size: 12px;
+}
+
 div.comment-links, div.message-links {
   padding: 0 5px 5px;
 }
@@ -1372,7 +1440,7 @@ ul#rightnav li a:hover {
 
 #side-comments .inline-comment-title {
   font-style: italic;
-  color: #565656;
+  color: #222222;
   text-decoration: none;
   white-space: nowrap;
   overflow: hidden;
@@ -1550,6 +1618,7 @@ div.articlenavigation {
   clear: both;
   font-family: 'montserratt', Arial, sans-serif;
   font-size: 11px;
+  margin-top: 12px;
 }
 div.articlenavigation h4 {
   font-size: 12px;
@@ -1626,8 +1695,8 @@ div.articlenavigation #article_nav_controls .loading img {
 ----------------------------------------------------------------------------------------------------*/
 
 .profile_page ul#nav li {
-	margin: 0 14px 0 0;
-	padding: 0 14px 0 0;
+	margin: 0 10px 0 0;
+	padding: 0 0 0 0;
 }
 
 /* Footer
@@ -1670,6 +1739,10 @@ span.morecomments {
   margin: -9px 0 9px;
 }
 
+span.deepthread {
+  font-size: 12px;
+}
+
 /* New home page outline */
 .masthead ul {
   font-size: 1.5em;
@@ -1703,7 +1776,7 @@ div.post {
 }
 
 #content .post .post-body {
-  margin-left: 65px;
+  margin-left: 55px;
 }
 
 #content .post .post-body h2,
@@ -1714,7 +1787,7 @@ div.post {
 }
 
 #content .post .post-body .post-info {
-  overflow: auto;
+  overflow: hidden;
   margin-bottom: 4px;
 }
 
@@ -1884,7 +1957,7 @@ div.tools a.subscription:hover {
 }
 
 div.tools a.edit.mod,
-div.tools a.subscription:hover,
+/* div.tools a.subscription:hover, */
 div.tools a.subscription.mod
 {
   background-position: bottom left;
@@ -1933,7 +2006,7 @@ div.comment-meta span.comment-date {
 
 div.comment-links {
   margin-top: 0px;
-  margin-bottom: 15px;
+  margin-bottom: 0px;
 }
 
 /* TODO: Fix the child comment-meta headers having too much bottom space
@@ -2016,14 +2089,14 @@ div.comment-links ul li.subscribe a.mod
 }
 
 div.comment-links ul li.retract a {
-  width: 19px;
+  width: 21px;
   height: 20px;
-  background-position: -128px 0;
+  background-position: -352px 0;
 }
 div.comment-links ul li.retract a:hover,
 div.comment-links ul li.retract a.mod
 {
-  background-position: -128px -32px;
+  background-position: -352px -32px;
 }
 
 div.comment-links ul li.parent a {
@@ -2035,6 +2108,34 @@ div.comment-links ul li.parent a:hover,
 div.comment-links ul li.parent a.mod
 {
   background-position: -224px -32px;
+}
+
+div.comment-links ul li.ban a {
+  width: 19px;
+  height: 20px;
+  background-position: -128px 0;
+}
+div.comment-links ul li.ban a:hover,
+div.comment-links ul li.ban a.mod,
+{
+  background-position: -128px -32px;
+}
+
+div.comment-links ul li.unban a {
+  width: 19px;
+  height: 20px;
+  background-position: -128px -32px;
+}
+div.comment-links ul li.unban a:hover,
+div.comment-links ul li.unban a.mod,
+{
+  background-position: -128px 0;
+}
+
+div.comment-links ul li.delete a {
+  width: 19px;
+  height: 20px;
+  background-position: -160px -32px;
 }
 
 
@@ -2073,7 +2174,7 @@ body.meetup .commentreply textarea {
   margin: 0 0 12px;
   font-family: Arial, sans-serif;
   font-size: 14px;
-  color: #565656;
+  color: #222222;
   -webkit-transition: all 0.3s;
   -moz-transition: all 0.3s;
   transition: all 0.3s;
@@ -2081,9 +2182,15 @@ body.meetup .commentreply textarea {
   border-radius: 0px;
   box-shadow: inherit;
   background: #fafafa;
-  border: 2px solid #376590;
+  border: 2px solid silver;
   box-shadow: inset 1px 1px 0 0 #e8e8e8;
 }
+
+body.post .commentreply textarea:focus,
+body.meetup .commentreply textarea:focus {
+  border: 2px solid #376590;
+}`
+
 body.meetup .commentreply textarea {
   width: 681px;
 }
@@ -2100,6 +2207,10 @@ body.meetup .commentreply textarea {
 }
 
 /* Forms */
+
+textarea#message {
+  width: 100%;
+}
 
 .textbox,
 textarea,

@@ -125,7 +125,7 @@ class Reddit(Wrapped):
 
         links = [
                     ("New to Effective Altruism?", "http://effectivealtruism.org/"),
-                    ("More on Effective Altruism", "http://effectivealtruism.org/resources/#reading")
+                    ("More on Effective Altruism", "/ea/6x/introduction_to_effective_altruism/")
                 ]
         ps.append(LinkBox(title = "Getting Started", links = links))
 
@@ -133,6 +133,12 @@ class Reddit(Wrapped):
             ps.append(LoginFormWide())
         else:
             ps.append(ProfileBar(c.user, self.corner_buttons()))
+
+            if c.user.name in g.admins:
+                button_name = "adminoff" if c.user_is_admin else "adminon"
+                button = NamedButton(button_name, False, nocname=not c.authorized_cname, target = "_self")
+                ps.append(SideBox(NavMenu([button], title = "Admin", base_path = "/", type = "buttons")))
+
 
         filters_ps = PaneStack(div=True)
         for toolbar in self.toolbars:
@@ -145,7 +151,8 @@ class Reddit(Wrapped):
             ps.append(SideBox(filters_ps))
 
         #don't show the subreddit info bar on cnames
-        if c.user_is_admin and not isinstance(c.site, FakeSubreddit) and not c.cname:
+        is_moderator = c.user_is_loggedin and c.site.is_moderator(c.user) or c.user_is_admin
+        if is_moderator and not isinstance(c.site, FakeSubreddit) and not c.cname:
             ps.append(SubredditInfoBar())
 
         ps.append(SideBoxPlaceholder('side-meetups', _('Nearest Meetups'), '/meetups', sr_path=False))
@@ -191,16 +198,6 @@ class Reddit(Wrapped):
         """set up for buttons in upper right corner of main page."""
         buttons = []
         if c.user_is_loggedin:
-            if c.user.name in g.admins:
-                if c.user_is_admin:
-                   buttons += [NamedButton("adminoff", False,
-                                           nocname=not c.authorized_cname,
-                                           target = "_self")]
-                else:
-                   buttons += [NamedButton("adminon",  False,
-                                           nocname=not c.authorized_cname,
-                                           target = "_self")]
-
             buttons += [NamedButton('submit', sr_path = not c.default_sr,
                                     nocname=not c.authorized_cname)]
             if c.user.safe_karma >= g.discussion_karma_to_post:
@@ -456,11 +453,13 @@ class SubredditInfoBar(Wrapped):
         if c.site.type != 'public':
             buttons.append(NavButton(plurals.contributors, 'contributors'))
 
-        if is_moderator:
+        if c.user_is_admin:
             buttons.append(NamedButton('edit'))
+
+        if is_moderator:
             buttons.extend([NavButton(menu.banusers, 'banned'),
                             NamedButton('spam')])
-        return [NavMenu(buttons, type = "flatlist", base_path = "/about/")]
+        return [NavMenu(buttons, type = "buttons", base_path = "/about/")]
 
 class SideBox(Wrapped):
     """Generic sidebox"""
@@ -484,13 +483,8 @@ class PrefsPage(Reddit):
                    NamedButton('update'),
                    NamedButton('delete')]
 
-        if c.user.wiki_account is None:
-            buttons.append(NamedButton('wikiaccount'))
-        elif c.user.wiki_account == '__error__':
+        if c.user.wiki_account == '__error__':
             pass
-        else:
-            user_page_url = 'http://{0}/wiki/User:{1}'.format(g.wiki_host, c.user.wiki_account)
-            buttons.append(NamedButton('wikiaccount', dest=user_page_url, style='external'))
         return NavMenu(buttons, base_path = "/prefs", _id='nav', type='navlist')
 
 class PrefOptions(Wrapped):
