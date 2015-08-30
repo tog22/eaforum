@@ -11,12 +11,16 @@ paster serve --reload ../r2/development.ini &
 # Save the paster server's pid
 paster_PID=$!
 
+echo "Started paster; PID is" $paster_PID
+
 #Here we need to install whatever additional Python packages are needed
 #At a minimum I plan to use Mechanize
 #In the long-run, it will likely be easier to fiddle with the vagrant provisioning to install all of this by default
+#pip install whatever
 
 #Run tests using mechanize
-python test.py
+#Not implemented yet
+#python test.py
 
 #At the end, stop running the server
 kill $paster_PID
