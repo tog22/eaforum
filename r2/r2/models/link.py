@@ -152,7 +152,7 @@ class Link(Thing, Printable, ImageHolder):
         return submit_url
 
     @classmethod
-    def _submit(cls, title, article, author, sr, ip, tags, spam = False, date = None, **kwargs):
+    def _submit(cls, title, article, author, sr, ip, spam = False, date = None, **kwargs):
         # Create the Post and commit to db.
         l = cls(title = title,
                 url = 'self',
@@ -176,10 +176,6 @@ class Link(Thing, Printable, ImageHolder):
         l.set_article(article)
 
         l.set_url_cache()
-
-        # Add tags
-        for tag in tags:
-            l.add_tag(tag)
 
         return l
 
@@ -379,7 +375,28 @@ class Link(Thing, Printable, ImageHolder):
 
     def make_permalink(self, sr, force_domain = False, sr_path = False):
         from r2.lib.template_helpers import get_domain
-        p = "ea/%s/%s/" % (self._id36, title_to_url(self.title))
+
+        def slug():
+            """
+            Retrieves the original URL slug (if any) to prevent the
+            URL from changing when the article title is updated.
+            """
+            # This could probably just check for `self.url == None`.
+            if not isinstance(self.url, basestring):
+                return self.title
+
+            regex = re.compile("""
+              /ea                   # subreddit
+              /[^/]+                # ID
+              /(?P<title>[^/]+)/    # title
+            """, re.X)
+            match = regex.match(self.url)
+            if match:
+                return match.group("title")
+            else:
+                return title_to_url(self.title)
+
+        p = "ea/%s/%s/" % (self._id36, slug())
         if c.default_sr and not sr_path:
             res = "/%s" % p
         elif sr and not c.cname:
@@ -1031,7 +1048,7 @@ class Comment(Thing, Printable):
         if not self._loaded:
             self._load()
         can_moderate = c.user_is_loggedin and (self.author_id == c.user._id or self.subreddit_slow.is_moderator(c.user) or c.user_is_admin)
-        return (can_moderate and self.retracted and not self.has_children())
+        return can_moderate and not self.has_children()
 
 
     # Changes the body of this comment, parsing the new body for polls and
@@ -1138,8 +1155,8 @@ class Comment(Thing, Printable):
         return permalink.unparse()
 
     def make_permalink_slow(self):
-        l = Link._byID(self.link_id, data=True)
-        return self.make_permalink(l, l.subreddit_slow)
+        link = Link._byID(self.link_id, data=True)
+        return self.make_permalink(link, link.subreddit_slow)
 
     def make_permalink_title(self, link):
         author = Account._byID(self.author_id, data=True).name
@@ -1226,14 +1243,6 @@ class Comment(Thing, Printable):
 
         if should_invalidate:
             g.rendercache.delete('side-comments' + '-' + c.site.name)
-            tags = Link._byID(self.link_id, data = True).tag_names()
-            if 'open_thread' in tags:
-                g.rendercache.delete('side-open' + '-' + c.site.name)
-            if 'quotes' in tags:
-                g.rendercache.delete('side-quote' + '-' + c.site.name)
-            if 'group_rationality_diary' in tags:
-                g.rendercache.delete('side-diary' + '-' + c.site.name)
-
 
 class InlineComment(Comment):
     """Exists to gain a different render_class in Wrapped"""

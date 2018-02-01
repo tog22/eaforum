@@ -32,6 +32,7 @@ from pylons.controllers.util import abort
 from r2.lib.captcha import get_iden
 from r2.lib.filters import spaceCompress, _force_unicode, _force_utf8
 from r2.lib.db.queries import db_sort
+from r2.lib.db import tdb_sql
 from r2.lib.menus import NavButton, NamedButton, NavMenu, JsButton, ExpandableButton, AbsButton
 from r2.lib.menus import SubredditButton, SubredditMenu, menu
 from r2.lib.strings import plurals, rand_strings, strings
@@ -118,16 +119,39 @@ class Reddit(Wrapped):
     def rightbox(self):
         """generates content in <div class="rightbox">"""
 
+        def get_links():
+            links = [
+                ("Forum FAQ", "/ea/vm/ea_forum_faq/"),
+                ("New to Effective Altruism?", "http://effectivealtruism.org/"),
+                ("More on Effective Altruism", "/ea/6x/introduction_to_effective_altruism/"),
+                most_recent_open_thread_link(),
+                ("Meetups", "https://eahub.org/groups"),
+                ("Other Resources", "https://www.effectivealtruism.org/get-involved/"),
+            ]
+            return filter(None, links)
+
+        def most_recent_open_thread_link():
+            query = """
+            SELECT thing_id
+            FROM reddit_data_link
+            WHERE key = 'title'
+              AND value ILIKE '%%open thread%%'
+            ORDER BY thing_id DESC
+            LIMIT 1
+            """
+            table, _ = tdb_sql.types_id[Link._type_id].data_table
+
+            link_id = table.engine.execute(query).scalar()
+            if link_id:
+                link = Link._byID(link_id)
+                return ("Open Thread", link.url)
+
         ps = PaneStack(css_class='spacer')
 
         if self.searchbox:
             ps.append(GoogleSearchForm())
 
-        links = [
-                    ("New to Effective Altruism?", "http://effectivealtruism.org/"),
-                    ("More on Effective Altruism", "/ea/6x/introduction_to_effective_altruism/")
-                ]
-        ps.append(LinkBox(title = "Getting Started", links = links))
+        ps.append(LinkBox(title = "Getting Started", links = get_links()))
 
         if not c.user_is_loggedin and self.loginbox:
             ps.append(LoginFormWide())
@@ -155,7 +179,6 @@ class Reddit(Wrapped):
         if is_moderator and not isinstance(c.site, FakeSubreddit) and not c.cname:
             ps.append(SubredditInfoBar())
 
-        ps.append(SideBoxPlaceholder('side-meetups', _('Nearest Meetups'), '/meetups', sr_path=False))
         ps.append(SideBoxPlaceholder('side-comments', _('Recent Comments'), '/comments'))
 
         if g.recent_edits_feed:
@@ -200,9 +223,6 @@ class Reddit(Wrapped):
         if c.user_is_loggedin:
             buttons += [NamedButton('submit', sr_path = not c.default_sr,
                                     nocname=not c.authorized_cname)]
-            if c.user.safe_karma >= g.discussion_karma_to_post:
-                buttons += [NamedButton('meetups/new', False,
-                                        nocname=not c.authorized_cname)]
             buttons += [NamedButton("prefs", False,
                                   css_class = "pref-lang")]
             buttons += [NamedButton("logout", False,
@@ -479,7 +499,6 @@ class PrefsPage(Reddit):
 
     def header_nav(self):
         buttons = [NavButton(menu.options, ''),
-                   NamedButton('friends'),
                    NamedButton('update'),
                    NamedButton('delete')]
 
@@ -970,6 +989,11 @@ class EmailVerify(Wrapped):
     """Form for providing a confirmation code to a new user."""
     pass
 
+class ReportEmail(Wrapped):
+    """Email template. Informs the contact email address that a user
+    has reported a post"""
+    pass
+
 class WikiSignupFail(Wrapped):
     """Email template. Tells a user that their automatic wiki account
     creation failed.
@@ -1094,11 +1118,6 @@ class GoogleSearchResults(BoringPage):
         # return self.content_stack(self.infobar,
                                   # self.nav_menu, self._content)
 
-class ArticleNavigation(Wrapped):
-  """Generates article navigation fragment for the supplied link"""
-  def __init__(self, link, author):
-    Wrapped.__init__(self, article=link, author=author)
-
 class SearchBar(Wrapped):
     """More detailed search box for /search and /categories pages.
     Displays the previous search as well as info of the elapsed_time
@@ -1139,10 +1158,14 @@ class FrameToolbar(Wrapped):
 
 class NewLink(Wrapped):
     """Render the link submission form"""
-    def __init__(self, captcha = None, article = '', title= '', subreddits = (), tags = (), sr_id = None):
+    def __init__(self, captcha = None, article = '', title= '', main_subreddit = None, draft_subreddit = None):
         Wrapped.__init__(self, captcha = captcha, article = article,
-                         title = title, subreddits = subreddits, tags = tags,
-                         sr_id = sr_id, notify_on_comment = True,
+                         title = title,
+                         main_subreddit = main_subreddit,
+                         draft_subreddit = draft_subreddit,
+                         notify_on_comment = True,
+                         published_status = "new",
+                         permalink="",
                          cc_licensed = True)
 
 class EditLink(Wrapped):

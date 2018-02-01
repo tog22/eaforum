@@ -28,9 +28,7 @@ from pylons.controllers.util import etag_cache
 
 import hashlib
 import httplib
-import urllib
 import urllib2
-import urlparse
 from validator import *
 
 from r2.models import *
@@ -43,14 +41,13 @@ from r2.controllers import ListingController
 from r2.lib.utils import get_title, sanitize_url, timeuntil, \
     set_last_modified, remote_addr
 from r2.lib.utils import query_string, to36, timefromnow
+from r2.lib.utils.http_utils import set_query_parameter
 from r2.lib.wrapped import Wrapped
 from r2.lib.rancode import random_key
 from r2.lib.pages import FriendList, ContributorList, ModList, EditorList, \
     BannedList, BoringPage, FormPage, NewLink, CssError, UploadedImage, \
     RecentArticles, RecentComments, TagCloud, TopContributors, TopMonthlyContributors, WikiPageList, \
-    ArticleNavigation, UpcomingMeetups, RecentPromotedArticles, \
-    MeetupsMap, RecentTagged
-
+    UpcomingMeetups, RecentPromotedArticles, MeetupsMap, RecentTagged
 
 from r2.lib.menus import CommentSortMenu
 from r2.lib.translation import Translator
@@ -300,8 +297,9 @@ class ApiController(RedditController):
               continue_editing = VBoolean('keep_editing'),
               notify_on_comment = VBoolean('notify_on_comment'),
               cc_licensed = VBoolean('cc_licensed'),
-              tags = VTags('tags'))
-    def POST_submit(self, res, l, new_content, title, save, continue_editing, sr, ip, tags, notify_on_comment, cc_licensed):
+              save_action = nop('link_submit_action'),
+    )
+    def POST_submit(self, res, l, new_content, title, save, continue_editing, sr, ip, notify_on_comment, cc_licensed, save_action):
         res._update('status', innerHTML = '')
         should_ratelimit = sr.should_ratelimit(c.user, 'link') if sr else True
 
@@ -339,7 +337,7 @@ class ApiController(RedditController):
         # TODO: include article body in arguments to Link model
         # print "\n".join(request.post.va)
         if not l:
-          l = Link._submit(request.post.title, new_content, c.user, sr, ip, tags, spam,
+          l = Link._submit(request.post.title, new_content, c.user, sr, ip, spam,
                            notify_on_comment=notify_on_comment, cc_licensed=cc_licensed)
           if save == 'on':
               r = l._save(c.user)
@@ -364,7 +362,6 @@ class ApiController(RedditController):
           l.cc_licensed = cc_licensed
           l.change_subreddit(sr._id)
           l._commit()
-          l.set_tags(tags)
           l.update_url_cache(old_url)
           if edit:
             edit._commit()
@@ -376,20 +373,10 @@ class ApiController(RedditController):
         # flag search indexer that something has changed
         tc.changed(l)
 
-        if continue_editing:
-          path = "/edit/%s" % l._id36
-        else:
-          # make_permalink is designed for links that can be set to _top
-          # here, we need to generate an ajax redirect as if we were not on a
-          # cname.
-          cname = c.cname
-          c.cname = False
-          #path = l.make_permalink_slow()
-          path = l.make_permalink(sr, sr_path = not sr.name == g.default_sr)
-          c.cname = cname
+        path = "/edit/%s" % l._id36
+        path = set_query_parameter(path, "message", save_action)
 
         res._redirect(path)
-
 
     def _login(self, res, user, dest='', rem = None):
         self.login(user, rem = rem)
@@ -409,17 +396,6 @@ class ApiController(RedditController):
         # TODO: This is a hack, and it doesn't work if the user clicks
         # on an anchor element after logging in because the query
         # param will disappear.
-        # TODO: This function should be in a different file.
-        # From http://stackoverflow.com/a/12897375:
-        def set_query_parameter(url, param_name, param_value):
-            scheme, netloc, path, query_string, fragment = urlparse.urlsplit(url)
-            query_params = urlparse.parse_qs(query_string)
-
-            query_params[param_name] = [param_value]
-            new_query_string = urllib.urlencode(query_params, doseq=True)
-
-            return urlparse.urlunsplit((scheme, netloc, path, new_query_string, fragment))
-
         dest_with_param = set_query_parameter(dest, "refresh", "true")
         res._redirect(dest_with_param)
 
@@ -737,7 +713,11 @@ class ApiController(RedditController):
               thing = VByName('id'))
     def POST_report(self, res, thing):
         '''for reporting...'''
-        Report.new(c.user, thing)
+        #An internal  reporting mechanism, which makes the report status visible on the actual post
+        #Removing it for now, can re-enable easily, but I'm unclear if it's worth it
+        #Report.new(c.user, thing)
+        #Sends report email
+        emailer.report_email(c.user, thing)
 
 
     def _validate_comment_text(self, res, error_thing, text):
@@ -1250,17 +1230,6 @@ class ApiController(RedditController):
         """Return HTML snippet of the top contributors for the side bar."""
         return self.render_cached('side-contributors', TopContributors, g.side_contributors_max_age)
 
-    def GET_side_meetups(self, *a, **kw):
-        """Return HTML snippet of the upcoming meetups for the side bar."""
-        ip = remote_addr(c.environ)
-        location = Meetup.geoLocateIp(ip)
-        # Key to group cached meetup pages with
-        invalidating_key = g.rendercache.get_key_group_value(Meetup.group_cache_key())
-        cache_key = "%s-side-meetups-%s" % (invalidating_key,ip)
-        return self.render_cached(cache_key, UpcomingMeetups, g.side_meetups_max_age,
-                                  cache_time=self.TWELVE_HOURS, location=location,
-                                  max_distance=g.meetups_radius)
-
     def GET_side_monthly_contributors(self, *a, **kw):
         """Return HTML snippet of the top monthly contributors for the side bar."""
         return self.render_cached('side-monthly-contributors', TopMonthlyContributors, g.side_contributors_max_age)
@@ -1286,25 +1255,6 @@ class ApiController(RedditController):
         """Return HTML snippet of the recent promoted posts for the front page."""
         # Server side cache is also invalidated when new article is posted
         return self.render_cached('recent-promoted', RecentPromotedArticles, g.side_posts_max_age)
-
-    def GET_front_meetups_map(self, *a, **kw):
-        ip = remote_addr(c.environ)
-        location = Meetup.geoLocateIp(ip)
-        invalidating_key = g.rendercache.get_key_group_value(Meetup.group_cache_key())
-        cache_key = "%s-front-meetups-%s" % (invalidating_key,ip)
-        return self.render_cached(cache_key, MeetupsMap, g.side_meetups_max_age,
-                                  cache_time=self.TWELVE_HOURS, location=location,
-                                  max_distance=g.meetups_radius)
-
-    @validate(link = VLink('article_id', redirect=False))
-    def GET_article_navigation(self, link, *a, **kw):
-      """Returns the article navigation fragment for the article specified"""
-      author = Account._byID(link.author_id, data=True) if link else None
-      return self.render_cached(
-        'article_navigation_%s' % (link._id36 if link else None),
-        ArticleNavigation, g.article_navigation_max_age,
-        link=link, author=author
-      )
 
     @validate(VModhash(),
               file = VLength('file', length=1024*500),

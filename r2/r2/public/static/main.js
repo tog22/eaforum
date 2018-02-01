@@ -5,9 +5,7 @@ $(document).ready(function() {
 
   var userInfo = $('<div id="user-info">');
   var pathname = window.location.pathname;
-  // This if statement prevents the viewed user being displayed as the logged in
-  // user when viewing a user's profile without being logged on
-  if ($("#side-status h2").length > 1 || !/^\/user\/([^\/]*)\/(.*)/.exec(pathname)) {
+  if (logged) {
     // username - using last child so when viewing another user their details
     // stay in right box
     $("#side-status h2").last().appendTo(userInfo);
@@ -49,7 +47,7 @@ $(document).ready(function() {
 
   // if user is adding a new article and does not have enough karma
   var mainForumOption = $("select#sr option[value=main]")[0];
-  if (/^.*\/submit\//.test(pathname) && mainForumOption.disabled) {
+  if (/^.*\/submit\//.test(pathname) && mainForumOption != undefined && mainForumOption.disabled) {
     var karma = / at least ([0-9]+) /.exec(mainForumOption.text)[1];
     $("<div class='infobar' style='width: inherit;'>You do not yet have enough karma to post an article. Every 'like' that your comments gain will increase your karma by one point. Once you have earned " + karma + " karma, you will be able to post articles here. In the meantime, here are some <a href=\"/ea/7b/welcome_to_the_effective_altruism_forum/\">other ways</a> to participate.</div><p>&nbsp;</p>").insertAfter("form h1");
   }
@@ -152,6 +150,15 @@ $(document).ready(function() {
             (navigator.platform.indexOf("iPod") != -1) ||
             (navigator.platform.indexOf("iPad") != -1));
   }
+
+  var commentId = window.location.hash;
+  jQuery(commentId).addClass("comment-fading-highlight");
+  window.addEventListener("hashchange", function () {
+    var commentId = window.location.hash;
+    jQuery(commentId)
+      .removeClass("comment-fading-highlight")
+      .addClass("comment-fading-highlight");
+  }, false);
 
   /* Don't do qtip tooltips with iphones (and related), it seems to interfer with the
      normal onclick behaviour */

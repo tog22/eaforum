@@ -42,6 +42,7 @@ from pylons import c, request
 import random as rand
 import re
 import time as time_module
+import urlparse
 from urllib import quote_plus
 
 class FrontController(RedditController):
@@ -101,14 +102,18 @@ class FrontController(RedditController):
         """page hit once a user has been sent a password reset email
         to verify their identity before allowing them to update their
         password."""
-        done = False
-        if not key and request.referer:
-            referer_path =  request.referer.split(g.domain)[-1]
-            done = referer_path.startswith(request.fullpath)
-        elif not user:
+        password_reset_form_probably_submitted = not key and request.referer
+        if password_reset_form_probably_submitted:
+            referer_path = urlparse.urlparse(request.referer).path
+            request_path = urlparse.urlparse(request.fullpath).path
+            password_reset_successful = referer_path.startswith(request_path)
+        elif user:
+            password_reset_successful = False
+        else:
             return self.abort404()
+
         return BoringPage(_("Reset password"),
-                          content=ResetPassword(key=key, done=done)).render()
+                          content=ResetPassword(key=key, done=password_reset_successful)).render()
 
     @validate(VAdmin(),
               article = VLink('article'))
@@ -498,8 +503,8 @@ class FrontController(RedditController):
               can_submit = VSRSubmitPage(),
               url = VRequired('url', None),
               title = VRequired('title', None),
-              tags = VTags('tags'))
-    def GET_submit(self, can_submit, url, title, tags):
+    )
+    def GET_submit(self, can_submit, url, title):
         """Submit form."""
         if not can_submit:
             return BoringPage(_("Not Enough Karma"),
@@ -543,12 +548,14 @@ class FrontController(RedditController):
         except NotFound:
             sr = None
 
+        draft_subreddit = Subreddit.draft_subreddit(c.user)
+        main_subreddit = Subreddit.main_subreddit()
+
         return FormPage(_("Submit Article"),
                         show_sidebar = True,
                         content=NewLink(title=title or '',
-                                        subreddits = srs,
-                                        tags=tags,
-                                        sr_id = sr._id if sr else None,
+                                        draft_subreddit=draft_subreddit,
+                                        main_subreddit=main_subreddit,
                                         captcha=captcha)).render()
 
     @validate(VUser(),
@@ -557,19 +564,20 @@ class FrontController(RedditController):
     def GET_editarticle(self, article):
         author = Account._byID(article.author_id, data=True)
         subreddits = Subreddit.submit_sr(author)
-        article_sr = Subreddit._byID(article.sr_id)
-        if c.user_is_admin:
-            # Add this admins subreddits to the list
-            subreddits = list(set(subreddits).union([article_sr] + Subreddit.submit_sr(c.user)))
-        elif article_sr.is_editor(c.user) and c.user != author:
-            # An editor can save to the current subreddit irrspective of the original author's karma
-            subreddits = [sr for sr in Subreddit.submit_sr(c.user) if sr.is_editor(c.user)]
 
         captcha = Captcha(tabular=False) if c.user.needs_captcha() else None
+        draft_subreddit = Subreddit.draft_subreddit(author)
+        main_subreddit = Subreddit.main_subreddit()
+        published_status = "published" if article.sr_id == main_subreddit._id else "draft"
 
-        return FormPage(_("Edit article"),
-                      show_sidebar = True,
-                      content=EditLink(article, subreddits=subreddits, tags=article.tag_names(), captcha=captcha)).render()
+        edit_link = EditLink(article,
+                             draft_subreddit = draft_subreddit,
+                             main_subreddit = main_subreddit,
+                             permalink = article.make_permalink_slow(),
+                             published_status = published_status,
+                             captcha = captcha)
+
+        return FormPage(_("Edit article"), show_sidebar = True, content=edit_link).render()
 
     def _render_opt_in_out(self, msg_hash, leave):
         """Generates the form for an optin/optout page"""

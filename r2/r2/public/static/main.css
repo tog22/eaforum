@@ -79,14 +79,6 @@ div.footer ul.footer-links:after,
 
 /* General Page Structure
 -------------------------------------------------------------------------------------- */
-/*Problem: On a sufficiently small screen size, the comment reply box will be wider than the screen
-(Containing div is 695px wide, the box is 100% of it minus margin, there's also the sidebar etc)
-Solution: On small screens, resize the whole site to make it fit, using viewport*/
-@media (max-width: 959px){
-  @viewport{
-    width: 960px;
-  }
-}
 #wrapper {
   margin: 0 auto;
   width: 1024px;
@@ -847,7 +839,6 @@ div.tools a.license:hover {
 
 a.read_more_link {
   color: rgb(50, 100, 146);
-  cursor: auto;
   display: inline;
   font-family: montserratt, Arial, sans-serif;
   font-size: 12px;
@@ -1099,6 +1090,19 @@ div.comment-links {
   padding: 0 0 2px;
   margin-top: -10px;
 }
+.comment-fading-highlight {
+  animation: 2s fadingHighlight;
+  -webkit-animation: 2s fadingHighlight;
+}
+@keyframes fadingHighlight {
+  from {
+    background-color: #fcffa8;
+  }
+
+  to {
+    background-color: #ecf5ff;
+  }
+}
 div.comment-links ul, div.message-links ul {
   list-style: none;
   margin: 0;
@@ -1221,11 +1225,18 @@ width: 20px;
  */
 /* Allow the 'yes/no' popup text to appear */
 div.comment-links ul li.delete a.yes, div.comment-links ul li.delete a.no,
-div.comment-links ul li.retract a.yes, div.comment-links ul li.retract a.no  {
+div.comment-links ul li.retract a.yes, div.comment-links ul li.retract a.no,
+div.comment-links ul li.report a.yes, div.comment-links ul li.report a.no {
   background-image: none;
   width: auto;
   display: inline;
   float: none;
+}
+
+/* Provide spacing between the question 'Are you sure?' and the first answer */
+div.comment-links ul li.delete a.yes, div.comment-links ul li.retract a.yes,
+div.comment-links ul li.report a.yes {
+    margin-left: 3px;
 }
 
 /* Temporary styling for text buttons until we have icons */
@@ -1630,90 +1641,12 @@ ul#rightnav li a:hover {
   text-decoration: none;
   margin-right: 5px;
   padding-left: 20px;
+  background: url(/static/top-contributors-ico.png) no-repeat 0 2px;
 }
 
 #sidebar div.contributors li.user span {
   font-size: 11px;
   color: #787878;
-}
-
-/* Article Navigation
-----------------------------------------------------------------------------------------------------*/
-div.articlenavigation {
-  clear: both;
-  font-family: 'montserratt', Arial, sans-serif;
-  font-size: 11px;
-  margin-top: 12px;
-}
-div.articlenavigation h4 {
-  font-size: 12px;
-  margin: 0;
-}
-div.articlenavigation h4 a {
-  background: url(/static/disclosure-triangle.gif) top left no-repeat;
-  padding-left: 18px;
-  text-decoration: none;
-}
-div.articlenavigation h4 a.open {
-  background-position: 0 -16px;
-}
-div.articlenavigation ul {
-  border-top: 1px solid #DEDEDE;
-  clear: both;
-  float: none;
-  margin: 5px 0 0;
-  padding: 10px 0 0;
-}
-div.articlenavigation ul li {
-  border: none;
-  clear: both;
-  display: block;
-  line-height: 15px;
-  margin: 1px 0;
-  padding: 3px 5px;
-  width: 650px;
-}
-div.articlenavigation ul li:hover {
-  background-color: #eee;
-}
-div.articlenavigation ul li .nav {
-  display: block;
-  float: left;
-  padding: 1px 0 0;
-  width: 13px;
-  height: 13px;
-  background: url(/static/icons.png) no-repeat left top;
-  background-position: 0 0;
-  text-indent: -9999px;
-}
-div.articlenavigation ul li .prev {
-  background-position: -608px 0;
-}
-div.articlenavigation ul li a.prev {
-  background-position: -608px -32px;
-}
-div.articlenavigation ul li .next {
-  background-position: -640px 0;
-}
-div.articlenavigation ul li a.next {
-  background-position: -640px -32px;
-}
-div.articlenavigation ul li span.place {
-  float: left;
-  display: block;
-  text-align: center;
-  width: 70px;
-}
-div.articlenavigation ul li span.type {
-  float: left;
-  margin: 0 0 0 10px;
-  width: 509px;
-}
-div.articlenavigation #article_nav_controls .loading {
-  padding-left: 18px;
-}
-div.articlenavigation #article_nav_controls .loading img {
-  padding-right: 5px;
 }
 
 /* Profile Page
@@ -1752,8 +1685,7 @@ div.footer {
   display: none;
 }
 
-.inprogress .loading,
-.articlenavigation .loading {
+.inprogress .loading {
   display: inline;
 }
 
@@ -2007,6 +1939,34 @@ div.tools a.license {
   width: 16px;
 }
 
+/* Allow the yes/no question to appear */
+div.tools ul li.report a.yes, div.tools ul li.report a.no {
+  background-image: none;
+  width: auto;
+  display: inline;
+  float: none;
+}
+
+/* Provide spacing between the question 'Are you sure?' and the first answer */
+div.tools ul li.report a.yes {
+    margin-left: 3px;
+}
+
+div.tools ul li.report a {
+  display: inline-block;
+  width: 18px;
+  height: 16px;
+  text-indent: -9999px;
+  padding: 0px;
+  background: url(/static/icons.png) no-repeat left top;
+  background-position: -672px 0;
+}
+div.tools ul li.report a:hover,
+div.tools ul li.report a.mod
+{
+  background-position: -672px -32px;
+}
+
 div.tools a.license:hover,
 div.tools a.license.mod
 {
@@ -2117,6 +2077,18 @@ div.comment-links ul li.subscribe a.mod
   background-position: 0 -32px;
 }
 
+div.comment-links ul li.report a {
+  width: 19px;
+  height: 16px;
+  background-position: -672px 0;
+}
+div.comment-links ul li.report a:hover,
+div.comment-links ul li.report a.mod
+{
+  background-position: -672px -32px;
+}
+
+
 div.comment-links ul li.retract a {
   width: 21px;
   height: 20px;
@@ -2164,13 +2136,12 @@ div.comment-links ul li.unban a.mod,
 div.comment-links ul li.delete a {
   width: 19px;
   height: 20px;
-  background-position: -160px -32px;
+  background-position: -155px 0;
 }
-
 
 .commentreply .buttons button,
 .commentreply .help-toggle button,
-.poll-voting-area button, button
+.poll-voting-area button, button.btn
 {
   display: inline-block;
   line-height: 25px;
@@ -2186,6 +2157,10 @@ div.comment-links ul li.delete a {
   -moz-border-radius: 3px;
   border-radius: 3px;
   font-weight: normal !important;
+}
+
+button.btn-danger {
+  background-color: #d9534f !important;
 }
 
 body.post .comment .commentreply div {

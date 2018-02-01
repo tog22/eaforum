@@ -84,7 +84,6 @@ function init(args) {
     /* initiate ajax requests to populate the side bar */
     /*populate_side_bar('side-wikilinks');*/
     /*populate_side_bar('side-wikilinks', 'article_id=2');    */
-    populate_side_bar('side-meetups', args);
     populate_side_bar('side-comments', args);
     populate_side_bar('side-posts', args);
     populate_side_bar('side-open', args);
@@ -95,11 +94,6 @@ function init(args) {
     populate_side_bar('side-contributors', args);
 
     populate_side_bar('front-recent-posts', args);
-    populate_side_bar('front-meetups-map', args,
-                      function(response) {
-                        $('front-meetups-map').innerHTML = response.responseText;
-                        createMap($('front-map'));
-                      });
 }
 
 function populate_side_bar(id, args, onSuccess) {
@@ -124,33 +118,6 @@ function populate_side_bar(id, args, onSuccess) {
                 onSuccess: onSuccess
                 });
     }
-}
-
-function toggle_article_navigation(article_id) {
-  var elem = $('article_nav_controls');
-  var state = $('articlenavstate');
-  if(!(elem && article_id && state)) return;
-
-  if(!elem.style.display) {
-    // Already visible
-    hide(elem);
-    state.className = 'dsphead';
-  }
-  else {
-    if(elem.children.length && elem.children[0].className == 'loading') {
-      // Needs to be populated
-      new Ajax.Request('/api/article_navigation', {
-        method: 'get',
-        parameters: 'article_id=' + escape(article_id),
-        onSuccess: function(response) {
-          elem.innerHTML = response.responseText;
-        }
-      });
-    }
-
-    show(elem);
-    state.className = 'dsphead open';
-  }
 }
 
 function updateLinks(f) {
@@ -317,6 +284,14 @@ function addMeetup() {
  }
 
 function showcover(warning, reason) {
+    var hideOnEscape = function () {
+        jQuery(document).keydown(function(e) {
+            if (e.keyCode === 27) {
+                hidecover("cover", "loginpopup");
+            }
+        });
+    };
+
     offset = window.pageYOffset||document.body.scrollTop||document.documentElement.scrollTop;
     if (warning) {
         show('cover_msg', 'cover_disclaim');
@@ -338,6 +313,9 @@ function showcover(warning, reason) {
 
     new_captcha();
     show("cover", "loginpopup");
+
+    hideOnEscape();
+
     return false;
 }
 

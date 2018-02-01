@@ -30,6 +30,7 @@ from r2.config import cache
 from r2.lib.template_helpers import add_sr
 from r2.lib.jsonresponse import json_respond
 from r2.lib.errors import errors, UserRequiredException
+from r2.lib.utils import http_utils
 
 from r2.models import *
 
@@ -118,7 +119,9 @@ class VRequired(Validator):
 
 class VEmailVerify(Validator):
     def run(self, code):
-        if not code:
+        code = code or ""
+        code = re.sub("\W", "", code).upper()
+        if code == "":
             c.errors.add(errors.NO_CODE)
         elif not code == c.user.confirmation_code:
             c.errors.add(errors.WRONG_CODE)
@@ -907,9 +910,11 @@ class VReason(Validator):
                 dest = (c.site.path + dest).replace('//', '/')
             return ('redirect', dest)
         if reason.startswith('vote_'):
+            import urlparse
             fullname = reason[5:]
             t = Thing._by_fullname(fullname, data=True)
-            return ('redirect', t.make_permalink_slow())
+            url = t.make_permalink_slow()
+            return ('redirect', http_utils.generate_comment_url(url, fullname))
         elif reason.startswith('share_'):
             fullname = reason[6:]
             t = Thing._by_fullname(fullname, data=True)
